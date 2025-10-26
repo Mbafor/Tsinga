@@ -1,5 +1,19 @@
 export type Language = 'en' | 'fr';
 
+// Function to detect browser language and return supported language
+export const detectBrowserLanguage = (): Language => {
+  // Get browser language
+  const browserLang = navigator.language || navigator.languages?.[0] || 'en';
+  
+  // Check if it's French (fr, fr-FR, fr-CA, etc.)
+  if (browserLang.toLowerCase().startsWith('fr')) {
+    return 'fr';
+  }
+  
+  // Default to English for all other languages
+  return 'en';
+};
+
 export const translations = {
   en: {
     appTitle: 'Daily Word Ministry at Full Gospel Tsinga',

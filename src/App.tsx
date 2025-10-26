@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Header } from './components/Header';
 import { MessageForm } from './components/MessageForm';
 import { Features } from './components/Features';
-import { Language, translations } from './lib/translations';
+import { Language, translations, detectBrowserLanguage } from './lib/translations';
 
 function App() {
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>(detectBrowserLanguage());
   const t = translations[language];
 
   return (
