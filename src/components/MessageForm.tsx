@@ -41,13 +41,13 @@ export function MessageForm({ language }: MessageFormProps) {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-8 max-w-3xl mx-auto">
+    <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
       <div className="mb-6">
-        <h2 className="text-3xl font-bold text-slate-800 mb-2">{t.formTitle}</h2>
-        <p className="text-slate-600 leading-relaxed">{t.formDescription}</p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">{t.formTitle}</h2>
+        <p className="text-slate-600 leading-relaxed text-sm sm:text-base">{t.formDescription}</p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">
             {t.preacherNameLabel}
@@ -57,7 +57,7 @@ export function MessageForm({ language }: MessageFormProps) {
             value={preacherName}
             onChange={(e) => setPreacherName(e.target.value)}
             placeholder={t.preacherNamePlaceholder}
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+            className="w-full px-3 sm:px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all text-base"
           />
         </div>
 
@@ -69,13 +69,13 @@ export function MessageForm({ language }: MessageFormProps) {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder={t.messagePlaceholder}
-            rows={10}
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all resize-none"
+            rows={8}
+            className="w-full px-3 sm:px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all resize-none text-base min-h-[120px] sm:min-h-[200px]"
           />
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+          <div className="flex items-center justify-center sm:justify-start space-x-2">
             <span
               className={`text-lg font-semibold ${
                 isOverLimit ? 'text-red-600' : wordCount > 200 ? 'text-amber-600' : 'text-slate-600'
@@ -83,11 +83,11 @@ export function MessageForm({ language }: MessageFormProps) {
             >
               {wordCount}
             </span>
-            <span className="text-slate-500">/ {WORD_LIMIT} {t.wordCount}</span>
+            <span className="text-slate-500 text-sm sm:text-base">/ {WORD_LIMIT} {t.wordCount}</span>
           </div>
 
           {isOverLimit && (
-            <div className="flex items-center space-x-2 text-red-600 text-sm">
+            <div className="flex items-center justify-center sm:justify-end space-x-2 text-red-600 text-sm">
               <AlertCircle className="w-4 h-4" />
               <span>{t.wordLimitWarning}</span>
             </div>
@@ -97,16 +97,16 @@ export function MessageForm({ language }: MessageFormProps) {
         {showSuccess && (
           <div className="flex items-center justify-center space-x-2 text-green-600 bg-green-50 py-3 rounded-lg">
             <CheckCircle className="w-5 h-5" />
-            <span className="font-medium">{t.successMessage}</span>
+            <span className="font-medium text-sm sm:text-base">{t.successMessage}</span>
           </div>
         )}
 
         <button
           onClick={handleSubmit}
           disabled={!canSend || isSubmitting}
-          className={`w-full flex items-center justify-center space-x-2 py-4 px-6 rounded-lg font-semibold text-white transition-all ${
+          className={`w-full flex items-center justify-center space-x-2 py-3 sm:py-4 px-6 rounded-lg font-semibold text-white transition-all text-base ${
             canSend && !isSubmitting
-              ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
+              ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:scale-95'
               : 'bg-slate-300 cursor-not-allowed'
           }`}
         >

@@ -36,17 +36,17 @@ export function Features({ language }: FeaturesProps) {
   ];
 
   return (
-    <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
       {features.map((feature, index) => (
         <div
           key={index}
-          className={`bg-white rounded-xl shadow-lg p-8 border-2 ${feature.borderColor} hover:shadow-xl transition-all transform hover:-translate-y-1`}
+          className={`bg-white rounded-xl shadow-lg p-6 sm:p-8 border-2 ${feature.borderColor} hover:shadow-xl transition-all transform hover:-translate-y-1 active:scale-95`}
         >
-          <div className={`${feature.bgColor} w-16 h-16 rounded-full flex items-center justify-center mb-5 mx-auto`}>
-            <feature.icon className={`w-8 h-8 ${feature.color}`} />
+          <div className={`${feature.bgColor} w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-4 sm:mb-5 mx-auto`}>
+            <feature.icon className={`w-7 h-7 sm:w-8 sm:h-8 ${feature.color}`} />
           </div>
-          <h3 className="text-xl font-bold text-slate-800 mb-3 text-center">{feature.title}</h3>
-          <p className="text-slate-600 leading-relaxed text-center">{feature.description}</p>
+          <h3 className="text-lg sm:text-xl font-bold text-slate-800 mb-3 text-center">{feature.title}</h3>
+          <p className="text-slate-600 leading-relaxed text-center text-sm sm:text-base">{feature.description}</p>
         </div>
       ))}
     </div>
