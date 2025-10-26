@@ -2,7 +2,7 @@ export type Language = 'en' | 'fr';
 
 export const translations = {
   en: {
-    appTitle: 'Daily Word Ministry',
+    appTitle: 'Daily Word Ministry at Full Gospel Tsinga',
     tagline: 'Spreading the Gospel with Clarity and Power',
     languageLabel: 'Language',
     heroVerse: '"How beautiful are the feet of those who bring good news!" - Romans 10:15',
@@ -25,7 +25,7 @@ export const translations = {
     footerVerse: '"Let your speech always be gracious, seasoned with salt" - Colossians 4:6'
   },
   fr: {
-    appTitle: 'Ministère de la Parole Quotidienne',
+    appTitle: 'Ministère de la Parole Quotidienne a Full Gospel Tsinga',
     tagline: 'Répandre l\'Évangile avec Clarté et Puissance',
     languageLabel: 'Langue',
     heroVerse: '"Qu\'ils sont beaux les pieds de ceux qui annoncent de bonnes nouvelles!" - Romains 10:15',

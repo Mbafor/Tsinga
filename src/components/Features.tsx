@@ -13,25 +13,25 @@ export function Features({ language }: FeaturesProps) {
       icon: BookOpen,
       title: t.feature1Title,
       description: t.feature1Description,
-      color: 'text-amber-600',
-      bgColor: 'bg-amber-50',
-      borderColor: 'border-amber-200'
+      color: 'text-blue-700',
+      bgColor: 'bg-blue-100',
+      borderColor: 'border-blue-300'
     },
     {
       icon: Send,
       title: t.feature2Title,
       description: t.feature2Description,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-      borderColor: 'border-emerald-200'
+      color: 'text-green-700',
+      bgColor: 'bg-green-100',
+      borderColor: 'border-green-300'
     },
     {
       icon: Globe2,
       title: t.feature3Title,
       description: t.feature3Description,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200'
+      color: 'text-purple-700',
+      bgColor: 'bg-purple-100',
+      borderColor: 'border-purple-300'
     }
   ];
 
@@ -40,13 +40,13 @@ export function Features({ language }: FeaturesProps) {
       {features.map((feature, index) => (
         <div
           key={index}
-          className={`bg-white rounded-xl shadow-lg p-6 sm:p-8 border-2 ${feature.borderColor} hover:shadow-xl transition-all transform hover:-translate-y-1 active:scale-95`}
+          className={`bg-white rounded-xl shadow-lg p-6 sm:p-8 border-3 ${feature.borderColor} hover:shadow-xl transition-all transform hover:-translate-y-1 active:scale-95`}
         >
-          <div className={`${feature.bgColor} w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-4 sm:mb-5 mx-auto`}>
+          <div className={`${feature.bgColor} w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-4 sm:mb-5 mx-auto border-2 ${feature.borderColor}`}>
             <feature.icon className={`w-7 h-7 sm:w-8 sm:h-8 ${feature.color}`} />
           </div>
-          <h3 className="text-lg sm:text-xl font-bold text-slate-800 mb-3 text-center">{feature.title}</h3>
-          <p className="text-slate-600 leading-relaxed text-center text-sm sm:text-base">{feature.description}</p>
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 text-center">{feature.title}</h3>
+          <p className="text-gray-800 leading-relaxed text-center text-base sm:text-lg font-medium">{feature.description}</p>
         </div>
       ))}
     </div>

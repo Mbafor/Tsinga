@@ -17,10 +17,10 @@ function App() {
         <Features language={language} />
       </main>
 
-      <footer className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-amber-100 py-6 sm:py-8 mt-12 sm:mt-16 border-t-2 border-amber-600">
+      <footer className="bg-gradient-to-r from-slate-800 via-slate-900 to-slate-800 text-white py-6 sm:py-8 mt-12 sm:mt-16 border-t-4 border-yellow-500">
         <div className="max-w-6xl mx-auto px-4 text-center">
-          <p className="italic text-sm mb-2 leading-relaxed">{t.footerVerse}</p>
-          <p className="text-slate-400 text-xs leading-relaxed">Daily Word Ministry - Empowering God's servants to share the Gospel</p>
+          <p className="italic text-base mb-3 leading-relaxed font-semibold text-yellow-100">{t.footerVerse}</p>
+          <p className="text-gray-300 text-sm leading-relaxed font-medium">Daily Word Ministry - Empowering God's servants to share the Gospel</p>
         </div>
       </footer>
     </div>
