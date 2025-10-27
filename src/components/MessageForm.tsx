@@ -267,20 +267,6 @@ export function MessageForm({ language }: MessageFormProps) {
     };
   }, [preacherName, message]);
 
-  // Clear draft when message is successfully sent
-  const clearDraft = () => {
-    try {
-      localStorage.removeItem(AUTOSAVE_KEY);
-      setLastSaved(null);
-      setAutoSaveStatus('idle');
-      setSaveCount(0);
-      lastContentRef.current = '';
-      console.log('🗑️ Draft cleared after successful send');
-    } catch (error) {
-      console.error('Failed to clear draft:', error);
-    }
-  };
-
   const wordCount = countWords(message);
   const isOverLimit = wordCount > WORD_LIMIT;
   const canSend = message.trim().length > 0 && !isOverLimit;
@@ -299,9 +285,14 @@ export function MessageForm({ language }: MessageFormProps) {
 
     setTimeout(() => {
       window.open(whatsappUrl, '_blank');
-      setMessage('');
-      setPreacherName('');
-      clearDraft(); // Clear the saved draft
+      // Keep the message and preacher name - don't clear them
+      // setMessage('');
+      // setPreacherName('');
+      // clearDraft(); // Don't clear the saved draft
+      
+      // Force save the current message to ensure it persists
+      saveToLocalStorage(true);
+      
       setShowSuccess(false);
       setIsSubmitting(false);
     }, 800);
@@ -342,6 +333,10 @@ export function MessageForm({ language }: MessageFormProps) {
           </div>
         </div>
         <p className="text-gray-800 leading-relaxed text-base sm:text-lg font-medium">{t.formDescription}</p>
+        <p className="text-blue-700 text-sm font-medium mt-2 flex items-center">
+          <Save className="w-4 h-4 mr-2" />
+          {t.autosaveNote}
+        </p>
       </div>
 
       <div className="space-y-4 sm:space-y-6">
