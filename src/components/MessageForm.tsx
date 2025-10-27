@@ -8,7 +8,8 @@ interface MessageFormProps {
 
 const WORD_LIMIT = 250;
 const AUTOSAVE_KEY = 'tsinga_message_draft';
-const AUTOSAVE_INTERVAL = 1500; // 1.5 seconds
+const AUTOSAVE_INTERVAL = 1000; // Exactly 1 second
+const FORCE_SAVE_INTERVAL = 5000; // Force save every 5 seconds as backup
 
 export function MessageForm({ language }: MessageFormProps) {
   const t = translations[language];
@@ -18,59 +19,184 @@ export function MessageForm({ language }: MessageFormProps) {
   const [showSuccess, setShowSuccess] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showSaveIndicator, setShowSaveIndicator] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveCount, setSaveCount] = useState(0);
   
   const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const forceSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastContentRef = useRef<string>('');
+
+  // Enhanced localStorage check with retry mechanism
+  const isLocalStorageAvailable = () => {
+    try {
+      const test = '__localStorage_test__';
+      localStorage.setItem(test, test);
+      localStorage.removeItem(test);
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   // Load saved draft on component mount
   useEffect(() => {
-    const savedDraft = localStorage.getItem(AUTOSAVE_KEY);
-    if (savedDraft) {
-      try {
+    console.log('MessageForm mounted, checking for saved draft...');
+    
+    if (!isLocalStorageAvailable()) {
+      console.error('localStorage is NOT available');
+      setAutoSaveStatus('error');
+      return;
+    }
+
+    try {
+      const savedDraft = localStorage.getItem(AUTOSAVE_KEY);
+      console.log('Raw saved draft:', savedDraft);
+      
+      if (savedDraft) {
         const { preacherName: savedPreacherName, message: savedMessage, timestamp } = JSON.parse(savedDraft);
-        // Only restore if saved within last 7 days
         const savedTime = new Date(timestamp);
         const now = new Date();
         const daysDiff = (now.getTime() - savedTime.getTime()) / (1000 * 60 * 60 * 24);
         
-        if (daysDiff <= 7) {
+        console.log('Draft details:', { 
+          savedPreacherName, 
+          messageLength: savedMessage?.length, 
+          daysDiff,
+          savedTime: savedTime.toLocaleString()
+        });
+        
+        if (daysDiff <= 7 && (savedPreacherName || savedMessage)) {
           setPreacherName(savedPreacherName || '');
           setMessage(savedMessage || '');
           setLastSaved(savedTime);
+          lastContentRef.current = `${savedPreacherName || ''}|${savedMessage || ''}`;
+          console.log('✅ Draft RESTORED successfully');
         } else {
-          // Remove old draft
           localStorage.removeItem(AUTOSAVE_KEY);
+          console.log('❌ Draft too old or empty, removed');
         }
-      } catch (error) {
-        console.warn('Failed to load saved draft:', error);
-        localStorage.removeItem(AUTOSAVE_KEY);
+      } else {
+        console.log('ℹ️ No saved draft found');
       }
+    } catch (error) {
+      console.error('❌ Failed to load saved draft:', error);
+      localStorage.removeItem(AUTOSAVE_KEY);
+      setAutoSaveStatus('error');
     }
   }, []);
 
-  // Autosave function
-  const saveToLocalStorage = () => {
-    if (preacherName.trim() || message.trim()) {
-      const draftData = {
-        preacherName,
-        message,
-        timestamp: new Date().toISOString()
-      };
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(draftData));
-      setLastSaved(new Date());
-      
-      // Show save indicator briefly
-      setShowSaveIndicator(true);
-      setTimeout(() => setShowSaveIndicator(false), 1000);
+  // Enhanced autosave function with retry logic
+  const saveToLocalStorage = async (forceLog = false) => {
+    const currentContent = `${preacherName.trim()}|${message.trim()}`;
+    
+    // Skip if content hasn't changed (unless forced)
+    if (!forceLog && currentContent === lastContentRef.current) {
+      return;
+    }
+
+    if (!isLocalStorageAvailable()) {
+      console.error('❌ localStorage not available during save attempt');
+      setAutoSaveStatus('error');
+      return;
+    }
+
+    const hasContent = preacherName.trim() || message.trim();
+    
+    if (hasContent) {
+      try {
+        setAutoSaveStatus('saving');
+        const draftData = {
+          preacherName: preacherName.trim(),
+          message: message.trim(),
+          timestamp: new Date().toISOString(),
+          wordCount: countWords(message),
+          saveNumber: saveCount + 1
+        };
+        
+        // Attempt to save with retry
+        let saveSuccess = false;
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        while (!saveSuccess && retryCount < maxRetries) {
+          try {
+            localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(draftData));
+            
+            // Verify the save worked by reading it back
+            const verification = localStorage.getItem(AUTOSAVE_KEY);
+            if (verification) {
+              const parsed = JSON.parse(verification);
+              if (parsed.preacherName === draftData.preacherName && parsed.message === draftData.message) {
+                saveSuccess = true;
+              }
+            }
+          } catch (retryError) {
+            retryCount++;
+            console.warn(`Save attempt ${retryCount} failed:`, retryError);
+            if (retryCount < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms before retry
+            }
+          }
+        }
+        
+        if (saveSuccess) {
+          setLastSaved(new Date());
+          setAutoSaveStatus('saved');
+          setSaveCount(prev => prev + 1);
+          lastContentRef.current = currentContent;
+          
+          console.log('✅ AUTOSAVE SUCCESS:', { 
+            preacherName: draftData.preacherName, 
+            messageLength: draftData.message.length,
+            wordCount: draftData.wordCount,
+            saveNumber: draftData.saveNumber,
+            timestamp: new Date().toLocaleTimeString()
+          });
+          
+          // Show save indicator
+          setShowSaveIndicator(true);
+          setTimeout(() => {
+            setShowSaveIndicator(false);
+            setAutoSaveStatus('idle');
+          }, 1500);
+        } else {
+          throw new Error('Save verification failed after retries');
+        }
+        
+      } catch (error) {
+        console.error('❌ AUTOSAVE FAILED after retries:', error);
+        setAutoSaveStatus('error');
+        
+        // Try to clear corrupted data
+        try {
+          localStorage.removeItem(AUTOSAVE_KEY);
+        } catch (clearError) {
+          console.error('Failed to clear corrupted data:', clearError);
+        }
+      }
+    } else {
+      // Clear draft if no content
+      try {
+        localStorage.removeItem(AUTOSAVE_KEY);
+        setLastSaved(null);
+        setAutoSaveStatus('idle');
+        lastContentRef.current = '';
+        console.log('🗑️ Draft cleared (no content)');
+      } catch (error) {
+        console.error('Failed to clear empty draft:', error);
+      }
     }
   };
 
-  // Set up autosave when content changes
+  // Set up regular autosave every 1 second when content changes
   useEffect(() => {
     if (autosaveTimeoutRef.current) {
       clearTimeout(autosaveTimeoutRef.current);
     }
 
-    if (preacherName.trim() || message.trim()) {
+    const hasContent = preacherName.trim() || message.trim();
+    
+    if (hasContent) {
       autosaveTimeoutRef.current = setTimeout(() => {
         saveToLocalStorage();
       }, AUTOSAVE_INTERVAL);
@@ -81,12 +207,78 @@ export function MessageForm({ language }: MessageFormProps) {
         clearTimeout(autosaveTimeoutRef.current);
       }
     };
+  }, [preacherName, message, saveCount]);
+
+  // Set up force save interval every 5 seconds as backup
+  useEffect(() => {
+    forceSaveIntervalRef.current = setInterval(() => {
+      const hasContent = preacherName.trim() || message.trim();
+      if (hasContent) {
+        console.log('🔄 FORCE SAVE triggered (5-second backup)');
+        saveToLocalStorage(true);
+      }
+    }, FORCE_SAVE_INTERVAL);
+
+    return () => {
+      if (forceSaveIntervalRef.current) {
+        clearInterval(forceSaveIntervalRef.current);
+      }
+    };
+  }, [preacherName, message]);
+
+  // Enhanced page unload and visibility change handlers
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (preacherName.trim() || message.trim()) {
+        console.log('🚪 Page unloading, saving draft...');
+        saveToLocalStorage(true);
+        // Add a small delay to ensure save completes
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && (preacherName.trim() || message.trim())) {
+        console.log('👁️ Page hidden, saving draft...');
+        saveToLocalStorage(true);
+      } else if (document.visibilityState === 'visible') {
+        console.log('👁️ Page visible again');
+      }
+    };
+
+    const handleFocus = () => {
+      console.log('🔍 Window focused');
+      // Check if draft still exists when returning to page
+      const savedDraft = localStorage.getItem(AUTOSAVE_KEY);
+      if (savedDraft) {
+        console.log('✅ Draft still exists on focus');
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [preacherName, message]);
 
   // Clear draft when message is successfully sent
   const clearDraft = () => {
-    localStorage.removeItem(AUTOSAVE_KEY);
-    setLastSaved(null);
+    try {
+      localStorage.removeItem(AUTOSAVE_KEY);
+      setLastSaved(null);
+      setAutoSaveStatus('idle');
+      setSaveCount(0);
+      lastContentRef.current = '';
+      console.log('🗑️ Draft cleared after successful send');
+    } catch (error) {
+      console.error('Failed to clear draft:', error);
+    }
   };
 
   const wordCount = countWords(message);
@@ -121,18 +313,30 @@ export function MessageForm({ language }: MessageFormProps) {
         <div className="flex justify-between items-start mb-2">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{t.formTitle}</h2>
           
-          {/* Autosave indicator */}
-          <div className="flex items-center space-x-1 text-sm text-gray-700">
+          {/* Enhanced Autosave indicator */}
+          <div className="flex items-center space-x-1 text-sm">
             {showSaveIndicator && (
-              <div className="flex items-center space-x-1 text-green-800 font-semibold">
+              <div className="flex items-center space-x-1 text-green-800 font-bold animate-pulse">
                 <Save className="w-4 h-4" />
-                <span>Saved</span>
+                <span>Saving...</span>
               </div>
             )}
-            {lastSaved && !showSaveIndicator && (
-              <div className="flex items-center space-x-1">
+            {lastSaved && !showSaveIndicator && autoSaveStatus !== 'error' && (
+              <div className="flex items-center space-x-1 text-green-700 font-semibold">
                 <Save className="w-4 h-4" />
                 <span>Auto-saved</span>
+              </div>
+            )}
+            {autoSaveStatus === 'error' && (
+              <div className="flex items-center space-x-1 text-red-700 font-semibold">
+                <AlertCircle className="w-4 h-4" />
+                <span>Save failed</span>
+              </div>
+            )}
+            {!lastSaved && !showSaveIndicator && autoSaveStatus === 'idle' && (preacherName.trim() || message.trim()) && (
+              <div className="flex items-center space-x-1 text-gray-600">
+                <Save className="w-4 h-4" />
+                <span>Will auto-save</span>
               </div>
             )}
           </div>
@@ -179,12 +383,14 @@ export function MessageForm({ language }: MessageFormProps) {
             <span className="text-gray-700 text-sm sm:text-base font-medium">/ {WORD_LIMIT} {t.wordCount}</span>
           </div>
 
-          {isOverLimit && (
-            <div className="flex items-center justify-center sm:justify-end space-x-2 text-red-700 text-sm font-semibold bg-red-100 px-3 py-1 rounded-lg">
-              <AlertCircle className="w-4 h-4" />
-              <span>{t.wordLimitWarning}</span>
-            </div>
-          )}
+          <div className="flex items-center space-x-3">
+            {isOverLimit && (
+              <div className="flex items-center space-x-2 text-red-700 text-sm font-semibold bg-red-100 px-3 py-1 rounded-lg">
+                <AlertCircle className="w-4 h-4" />
+                <span>{t.wordLimitWarning}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {showSuccess && (
@@ -193,6 +399,8 @@ export function MessageForm({ language }: MessageFormProps) {
             <span className="font-bold text-base sm:text-lg">{t.successMessage}</span>
           </div>
         )}
+
+        {/* Debug info hidden in production - autosave still works silently in background */}
 
         <button
           onClick={handleSubmit}
